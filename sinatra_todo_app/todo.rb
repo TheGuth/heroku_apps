@@ -66,6 +66,14 @@ before do
   session[:lists] ||= []
 end
 
+def load_list(index)
+  list = session[:lists][index] if index
+  return list if list
+
+  session[:error] = "The specified list was not found."
+  redirect "/lists"
+end
+
 # home route redirects to /lists
 get '/' do
   redirect '/lists'
@@ -115,7 +123,8 @@ end
 
 # brings up list by the lists index number
 get '/lists/:list_number' do
-  @list = session[:lists][params[:list_number].to_i]
+  @list_number = params[:list_number].to_i
+  @list = load_list(@list_number)
   erb :list, layout: :layout
 end
 
@@ -123,7 +132,7 @@ end
 # Edit an existing todo list
 get "/lists/:list_number/editlist" do
   list_number = params[:list_number].to_i
-  @list = session[:lists][list_number]
+  @list = load_list(list_number)
   erb :editlist, layout: :layout
 end
 
@@ -131,7 +140,7 @@ end
 post "/lists/:list_number" do
   list_name = params[:list_name].strip
   list_number = params[:list_number].to_i
-  @list = session[:lists][list_number]
+  @list = load_list(list_number)
 
   error = error_for_list_name(list_name)
   if error
@@ -156,7 +165,7 @@ end
 # Add a new todo to a list
 post "/lists/:list_number/todos" do
   list_number = params[:list_number].to_i
-  @list = session[:lists][list_number]
+  @list = load_list(list_number)
   todo_name = params[:todo].strip
 
   error = error_for_todo(todo_name)
@@ -183,7 +192,7 @@ end
 # update the status of a todo
 post "/lists/:list_number/todos/:todo" do
   list_number = params[:list_number].to_i
-  @list = session[:lists][list_number]
+  @list = load_list(list_number)
 
   @todo_id = params[:todo].to_i
   is_completed = params[:completed] == "true"
@@ -196,7 +205,7 @@ end
 # Mark all todos as complete for a list
 post "/lists/:list_number/todos/complete/all" do
   list_number = params[:list_number].to_i
-  @list = session[:lists][list_number]
+  @list = load_list(list_number)
 
   @list[:todos].each do |todo|
     todo[:completed] = "true"
